@@ -1,0 +1,6 @@
+base_dir=$(dirname $0)
+source $base_dir/config
+source $base_dir/functions
+source $base_dir/check
+
+# vim: ft=sh

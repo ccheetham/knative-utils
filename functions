@@ -1,0 +1,28 @@
+msg() {
+  echo "--- "$*
+}
+
+hdr() {
+  echo "=== "$*
+}
+
+err() {
+  echo "!!! "$* >&2
+}
+
+die() {
+  err $*
+  exit 1
+}
+
+knative_operator_path() {
+    local definition=$1
+    echo https://github.com/knative/operator/releases/download/${KNATIVE_VERSION}/${definition}.yaml
+}
+
+knative_serving_path() {
+    local definition=$1
+    echo https://github.com/knative/serving/releases/download/${KNATIVE_VERSION}/${definition}.yaml
+}
+
+# vim: ft=sh

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+source $(dirname $0)/common
+
+hdr "uninstalling Knative Eventing component ..."
+msg "... deleting knative-eventing deployment"
+kubectl delete KnativeEventing knative-eventing --namespace knative-eventing
+while true; do
+  status=$(kubectl get deployment --namespace knative-eventing --no-headers 2>&1)
+  [[ $status == *"No resources found"* ]] && break
+  msg "... waiting until knative-eventing deployment deleted"
+  sleep 1
+done
+
+hdr "uninstalling Knative Serving component ..."
+msg "... unconfiguring DNS"
+kubectl delete -f $(knative_serving_path serving-default-domain)
+msg "... deleting knative-serving deployment"
+kubectl delete KnativeServing knative-serving --namespace knative-serving
+while true; do
+  status=$(kubectl get deployment --namespace knative-serving --no-headers 2>&1)
+  [[ $status == *"No resources found"* ]] && break
+  msg "... waiting until knative-serving deployment deleted"
+  sleep 1
+done
+
+hdr "uninstalling Knative operator"
+msg "... deleting knative-operator deployment"
+kubectl delete -f $(knative_operator_path operator)
+while true; do
+  status=$(kubectl get deployment knative-operator --no-headers 2>&1)
+  [[ $status == *"not found"* ]] && break
+  msg "... waiting until knative-operator deployment deleted"
+  sleep 1
+done
+
+hdr "uninstalling Istio"
+msg "... deleting istio-system deployment"
+istioctl x uninstall --purge -y
+while true; do
+  status=$(kubectl get deployment --namespace istio-system --no-headers 2>&1)
+  [[ $status == *"No resources found"* ]] && break
+  msg "... waiting until istio-system deployment deleted"
+  sleep 1
+done
+
+hdr "deleting namspaces (may take a while)"
+kubectl delete namespace knative-eventing
+kubectl delete namespace knative-serving
+kubectl delete namespace istio-system
+
+hdr "Knative uninstalled"

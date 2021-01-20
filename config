@@ -1,0 +1,4 @@
+KNATIVE_VERSION=${KNATIVE_VERSION:-v0.20.0}
+KUBECTL_CONTEXT=${KUBECTL_CONTEXT:-docker-desktop}
+
+# vim: ft=sh

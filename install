@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+source $(dirname $0)/common
+
+hdr "installing Istio ..."
+istioctl install -y
+while true; do
+  namespace=$(kubectl get namespace istio-system 2>&1)
+  [[ $namespace == *Active* ]] && break
+  msg "... waiting until istio-system namespace ready"
+  sleep 1
+done
+while true; do
+  not_ready=$(kubectl get deployment --namespace istio-system --no-headers | grep -v '1/1')
+  [[ -z $not_ready ]] && break
+  msg "... waiting until istio-system deployment ready"
+  sleep 1
+done
+
+hdr "installing Knative operator ..."
+msg "... applying"
+kubectl apply -f $(knative_operator_path operator)
+while true; do
+  status=$(kubectl get deployment knative-operator --no-headers | awk '{print $2}')
+  [[ $status == 1/1 ]] && break
+  msg "... waiting until knative-operator deployment ready"
+  sleep 1
+done
+
+hdr "installing Serving component ..."
+msg "... applying"
+kubectl apply -f ${base_dir}/knative-serving.yaml
+while true; do
+  namespace=$(kubectl get namespace knative-serving 2>&1)
+  [[ $namespace == *Active* ]] && break
+  msg "... waiting until knative-serving namespace ready"
+  sleep 1
+done
+while true; do
+  serving=$(kubectl get KnativeServing knative-serving --namespace knative-serving --no-headers | awk '{print $3}')
+  [[ $serving == True ]] && break
+  msg "... waiting until KnativeServing knative-serving ready"
+  sleep 1
+done
+msg "... configuring DNS (using xip.io)"
+kubectl apply -f $(knative_serving_path serving-default-domain)
+while true; do
+  not_ready=$(kubectl get pods --namespace knative-serving --no-headers | grep -v 'Completed' | grep -v '1/1')
+  [[ -z $not_ready ]] && break
+  msg "... waiting until knative-serving pods ready"
+  sleep 1
+done
+
+hdr "installing Eventing component ..."
+msg "... applying"
+kubectl apply -f ${base_dir}/knative-eventing.yaml
+while true; do
+  namespace=$(kubectl get namespace knative-eventing 2>&1)
+  [[ $namespace == *Active* ]] && break
+  msg "... waiting until knative-eventing namespace ready"
+  sleep 1
+done
+while true; do
+  not_ready=$(kubectl get deployment --namespace knative-eventing --no-headers | grep -v 'Completed' | grep -v '1/1')
+  [[ -z $not_ready ]] && break
+  msg "... waiting until knative-eventing deployment ready"
+  sleep 1
+done
+while true; do
+  serving=$(kubectl get KnativeEventing knative-eventing --namespace knative-eventing --no-headers | awk '{print $3}')
+  [[ $serving == True ]] && break
+  msg "... waiting until KnativeEventing knative-eventing ready"
+  sleep 1
+done
+
+hdr "Knative installed"
+
+# vim: ft=sh

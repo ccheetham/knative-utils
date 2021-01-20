@@ -1,0 +1,7 @@
+command -v kubectl >/dev/null || die "kubectl not found"
+command -v istioctl >/dev/null || die "istioctl not found"
+
+context=$(kubectl config current-context)
+[[ $context == $KUBECTL_CONTEXT ]] || die "context not $KUBECTL_CONTEXT: $context"
+
+# vim: ft=sh
